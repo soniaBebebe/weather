@@ -1,9 +1,15 @@
-import { useState } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import heroImg from './assets/hero.png'
 import reactLogo from './assets/react.svg'
 import viteLogo from './assets/vite.svg'
 import './App.css'
-import {useMemo} from "react";
+
+async function fetchForecast(city){
+  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true`;
+  const res = await fetch(url);
+  if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
+  return await res.json();
+}
 
 const CITIES=[
   {id: 'sf', name:"San Francisco", region:"California, US", lat:37.7749, lon:-122.4194},
@@ -32,7 +38,7 @@ const CONTINENTS = [
 
 ];
 
-function WorldMap(){
+function WorldMap({dataByCity}){
   return(
     <svg viewBox="0 0 1000 500" className='World-map' role="img" arial-label="World Map">
       <rect width="1000" height="500" fill="var(--panel)"/>
@@ -52,6 +58,7 @@ function WorldMap(){
 
       {CITIES.map((city)=>{
         const{x,y}=toXY(city.lat, city.lon);
+        const data=dataByCity[city.id];
         return(
 
         
@@ -59,6 +66,9 @@ function WorldMap(){
         <circle r="6.5" fill="var(--paper)" strokeWidth="1.5"/>
         <text y="-14" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="15" fill="var(--paper)">
           {city.name}
+        </text>
+        <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
+          {data ? `${Math.round(data.current_weather.temperature)}C`: "..."}
         </text>
       </g>
       );
@@ -68,9 +78,16 @@ function WorldMap(){
   )
 }
 
-function App() {
-  const [count, setCount] = useState(0)
+export default function App() {
   const coords=useMemo(()=>CITIES.map((c)=>({...c,...toXY(c.lat, c.lon) })), []);
+  const [dataByCity, setDataByCity] = useState({});
+  useEffect(()=>{
+    Promise.all(CITIES.map((c)=>fetchForecast(c))).then((results)=>{
+      const map={};
+      CITIES.forEach((c,i)=>{map[c.id] = results[i];});
+      setDataByCity(map);
+    });
+  }, []);
   return (
     <>
     <div className="wx-app">
@@ -109,17 +126,17 @@ function App() {
 
       `}
       </style>
-      <h1> Шаг 1: Проект создан</h1>
-      <p> список Городов + пересчет lat/lon -- x/y + статичная карта</p>
+      <h1> Шаг 2: Живые данные с Open-Meteo</h1>
+      <p> три параллельных запроса -- текущая температура на карте</p>
     
       <div className="map-wrap">
-        <WorldMap />
+        <WorldMap dataByCity={dataByCity} />
       </div>
       <div className="debug">
         <table>
-          <thread>
+          <thead>
             <tr><th>Город</th><th>lat,lon</th><th>x,y на карте</th></tr>
-          </thread>
+          </thead>
           <tbody>
             {coords.map((c)=>(
               <tr key={c.id}>
@@ -135,5 +152,3 @@ function App() {
     </>
   )
 }
-
-export default App
