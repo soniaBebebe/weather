@@ -6,9 +6,23 @@ import './App.css'
 
 async function fetchForecast(city){
   const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true`;
-  const res = await fetch(url);
-  if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
-  return await res.json();
+  try{
+    const res = await fetch(url);
+    if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
+    return await res.json();
+  } catch{
+    return buildFallback(city);
+  }
+  
+}
+
+function buildFallback(city){
+  const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt((0),0));
+  const temp=(12+seed %15);
+  return{
+    current_weather:{temperature: temp, weathercode:1},
+    _fallback:true,
+  };
 }
 
 const CITIES=[
@@ -70,6 +84,9 @@ function WorldMap({dataByCity}){
         <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
           {data ? `${Math.round(data.current_weather.temperature)}C`: "..."}
         </text>
+        <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
+          {data ? `${Math.round(data.current_weather.temperature)}C${data._fallback ? " *":""}`:"..."}
+        </text>
       </g>
       );
       })}
@@ -128,7 +145,7 @@ export default function App() {
       </style>
       <h1> Шаг 2: Живые данные с Open-Meteo</h1>
       <p> три параллельных запроса -- текущая температура на карте</p>
-    
+      
       <div className="map-wrap">
         <WorldMap dataByCity={dataByCity} />
       </div>
