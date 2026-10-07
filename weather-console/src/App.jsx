@@ -49,7 +49,7 @@ const CONTINENTS = [
 
 ];
 
-function WorldMap({dataByCity}){
+function WorldMap({dataByCity, selectedId, onSelect}){
   return(
     <svg viewBox="0 0 1000 500" className='world-map' role="img" aria-label="World Map">
       <rect width="1000" height="500" fill="var(--panel)"/>
@@ -70,11 +70,14 @@ function WorldMap({dataByCity}){
       {CITIES.map((city)=>{
         const{x,y}=toXY(city.lat, city.lon);
         const data=dataByCity[city.id];
+        const active=selectedId===city.id;
         return(
 
         
-      <g key={city.id} transform={`translate(${x}, ${y})`}>
-        <circle r="6.5" fill="var(--paper)" strokeWidth="1.5"/>
+      <g key={city.id} transform={`translate(${x}, ${y})`}
+      onClick={()=>onSelect(city.id)}
+      style={{cursor:"pointer"}}>
+        <circle r={active ? 9:6.5} fill="var(--paper)" strokeWidth="1.5"/>
         <text y="-14" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="15" fill="var(--paper)">
           {city.name}
         </text>
@@ -95,6 +98,7 @@ function WorldMap({dataByCity}){
 export default function App() {
   const coords=useMemo(()=>CITIES.map((c)=>({...c,...toXY(c.lat, c.lon) })), []);
   const [dataByCity, setDataByCity] = useState({});
+  const [selectedId, setSelectedId] = useState(null);
   useEffect(()=>{
     Promise.all(CITIES.map((c)=>fetchForecast(c))).then((results)=>{
       const map={};
@@ -144,8 +148,11 @@ export default function App() {
       <p> три параллельных запроса -- текущая температура на карте</p>
       
       <div className="map-wrap">
-        <WorldMap dataByCity={dataByCity} />
+        <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
+      <p className='mono' style={{marginTop:10}}>
+        {selectedId ? `Выбран: ${CITIES.find((c)=>c.id===selectedId).name}` : "Кликните по городу на карте"}
+      </p>
       <div className="debug">
         <table>
           <thead>
