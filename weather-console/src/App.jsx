@@ -139,6 +139,9 @@ export default function App() {
       setDataByCity(map);
     });
   }, []);
+
+  const selectedCity=CITIES.find((c)=> c.id===selectedId);
+
   return (
     <>
     <div className="wx-app">
