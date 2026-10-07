@@ -1,7 +1,4 @@
 import { useState, useEffect, useMemo } from 'react'
-import heroImg from './assets/hero.png'
-import reactLogo from './assets/react.svg'
-import viteLogo from './assets/vite.svg'
 import './App.css'
 
 async function fetchForecast(city){
@@ -18,7 +15,7 @@ async function fetchForecast(city){
 
 function buildFallback(city){
   const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt((0),0));
-  const temp=(12+seed %15);
+  const temp=12+(seed %15);
   return{
     current_weather:{temperature: temp, weathercode:1},
     _fallback:true,
@@ -54,7 +51,7 @@ const CONTINENTS = [
 
 function WorldMap({dataByCity}){
   return(
-    <svg viewBox="0 0 1000 500" className='World-map' role="img" arial-label="World Map">
+    <svg viewBox="0 0 1000 500" className='world-map' role="img" aria-label="World Map">
       <rect width="1000" height="500" fill="var(--panel)"/>
       {Array.from({length:9}).map((_,i)=>(
         <line key={"v"+i} x1={i*125} y1="0" x2={i*125} y2="500" stroke="var(--line)" opacity="0.35"/>
@@ -81,9 +78,9 @@ function WorldMap({dataByCity}){
         <text y="-14" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="15" fill="var(--paper)">
           {city.name}
         </text>
-        <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
+        {/* <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
           {data ? `${Math.round(data.current_weather.temperature)}C`: "..."}
-        </text>
+        </text> */}
         <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
           {data ? `${Math.round(data.current_weather.temperature)}C${data._fallback ? " *":""}`:"..."}
         </text>
