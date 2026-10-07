@@ -49,6 +49,39 @@ const CONTINENTS = [
 
 ];
 
+function conditionFromCode(code){
+  if (code===0) return "Ясно";
+  if ([1,2,3].includes(code)) return "Облачно";
+  if ([45,48].includes(code)) return "Туман";
+  if ([51,53,55,61,63,65,80,81,82].includes(code)) return "Дождь";
+  if ([71,73,75,77].includes(code)) return "Снег";
+  if ([95,96,99].includes(code)) return "Гроза";
+  return "Облачно";
+}
+
+function DetailPanel({city,data}){
+  if(!city){
+    return <p className='hint'>Кликните по городу на карте, чтобы узнать прогноз</p>;
+  }
+  if(!data){
+    return <p className='hint'>Загружаем данные...</p>;
+  }
+  return(
+    <div className='panel'>
+      <div className='panel-head'>
+        <h2>{city.name}</h2>
+        <span className='temp'>{Math.round(data.current_weather.temperature)}C</span>
+      </div>
+      <p className='region'>{city.region}</p>
+      <p className='cords'>
+        {Math.abs(city.lat).toFixed(2)}C{city.lat>=0?"N":"S"} * {Math.abs(city.lon).toFixed(2)}C{city.lon>=0?"E":"W"}
+      </p>
+      <p className='condition'>{conditionFromCode(data.current_weather.weathercode)}</p>
+      {data._fallback&& <p className='notice'>Демо-данные: реальный API недоступен</p>}
+    </div>
+  )
+}
+
 function WorldMap({dataByCity, selectedId, onSelect}){
   return(
     <svg viewBox="0 0 1000 500" className='world-map' role="img" aria-label="World Map">
@@ -150,6 +183,7 @@ export default function App() {
       <div className="map-wrap">
         <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
+      <DetailPanel city={selectedCity} data={selectedId ? dataByCity[selectedId]:null} />
       <p className='mono' style={{marginTop:10}}>
         {selectedId ? `Выбран: ${CITIES.find((c)=>c.id===selectedId).name}` : "Кликните по городу на карте"}
       </p>
