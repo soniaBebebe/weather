@@ -59,6 +59,32 @@ function conditionFromCode(code){
   return "Облачно";
 }
 
+function conditionFromCode(code){
+  if (code===0) return "Sunny";
+  if ([1,2,3].includes(code)) return "Cloudy";
+  if ([45,48].includes(code)) return "Fog";
+  if ([51,53,55,61,63,65,80,81,82].includes(code)) return "Rain";
+  if ([71,73,75,77].includes(code)) return "Snow";
+  if ([95,96,99].includes(code)) return "Storm";
+  return "Cloudy";
+}
+
+function AnimatedIcon({type}){
+  if(type==="sun"){
+    return(
+      <svg width='64' height='64' viewBox='0 0 100 100'>
+        <g className='icon-spin'>
+          {Array.from({length:8}).map((_,i)=>(
+            <rect key={i} x="48" y="6" width="4" height='14' rx='2' fill='var(--amber)' transform={`rotate(${i*45} 50 50)`}></rect>
+          ))}
+        </g>
+      </svg>
+
+    )
+  }
+}
+
+
 function DetailPanel({city,data}){
   if(!city){
     return <p className='hint'>Кликните по городу на карте, чтобы узнать прогноз</p>;
