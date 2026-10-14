@@ -49,17 +49,17 @@ const CONTINENTS = [
 
 ];
 
-function conditionFromCode(code){
-  if (code===0) return "Ясно";
-  if ([1,2,3].includes(code)) return "Облачно";
-  if ([45,48].includes(code)) return "Туман";
-  if ([51,53,55,61,63,65,80,81,82].includes(code)) return "Дождь";
-  if ([71,73,75,77].includes(code)) return "Снег";
-  if ([95,96,99].includes(code)) return "Гроза";
-  return "Облачно";
-}
+// function conditionFromCode(code){
+//   if (code===0) return "Ясно";
+//   if ([1,2,3].includes(code)) return "Облачно";
+//   if ([45,48].includes(code)) return "Туман";
+//   if ([51,53,55,61,63,65,80,81,82].includes(code)) return "Дождь";
+//   if ([71,73,75,77].includes(code)) return "Снег";
+//   if ([95,96,99].includes(code)) return "Гроза";
+//   return "Облачно";
+// }
 
-function conditionFromCode(code){
+function iconTypeFromCode(code){
   if (code===0) return "Sunny";
   if ([1,2,3].includes(code)) return "Cloudy";
   if ([45,48].includes(code)) return "Fog";
@@ -79,9 +79,27 @@ function AnimatedIcon({type}){
           ))}
         </g>
       </svg>
-
     )
   }
+  if(type==="rain"){
+    return(
+      <svg width='64' height='64' viewBox='0 0 100 100'>
+        <ellipse cx="52" cy="42" rx="27" ry="15" fill="var(--paper)"/>
+        <ellipse cx="34" cy="38" rx="14" ry="11" fill="var(--paper)"/>
+        <g className='icon-rain'>
+          {[28,44,60,72].map((x,i)=>(
+            <line key={i} x1={x} y1="62" x2={x-6} y2="86" stroke="var(--cyan)" strokeWidth="4" strokeLinecap='round' style={{animationDelay: `${i*0.15}s`}}/>
+          ))}
+        </g>
+      </svg>
+    )
+  }
+  return(
+    <svg width="64" height='64' viewBox="0 0 100 100">
+      <ellipse cx="52" cy="50" rx="28" ry="16" fill="var(--paper)" opacity={type==="fog"?0.55:1}/>
+      <ellipse cx="34" cy="44" rx="15" ry="12" fill="var(--paper)" opacity={type==="fog"?0.55:1}/>
+    </svg>
+  )
 }
 
 
@@ -96,13 +114,14 @@ function DetailPanel({city,data}){
     <div className='panel'>
       <div className='panel-head'>
         <h2>{city.name}</h2>
+        <AnimatedIcon type={iconTypeFromCode(data.current_weather.weathercode)}/>
         <span className='temp'>{Math.round(data.current_weather.temperature)}C</span>
       </div>
       <p className='region'>{city.region}</p>
       <p className='cords'>
         {Math.abs(city.lat).toFixed(2)}C{city.lat>=0?"N":"S"} * {Math.abs(city.lon).toFixed(2)}C{city.lon>=0?"E":"W"}
       </p>
-      <p className='condition'>{conditionFromCode(data.current_weather.weathercode)}</p>
+      <p className='condition'>{iconTypeFromCode(data.current_weather.weathercode)}</p>
       {data._fallback&& <p className='notice'>Демо-данные: реальный API недоступен</p>}
     </div>
   )
@@ -203,6 +222,26 @@ export default function App() {
         .debug table{ border-collapse:collapse; width:100%; max-width:480px; }
 
         .debug td,.debug th{ text-align:left; padding:4px 10px 4px 0; border-bottom:1px solid var(--line); }
+
+        .icon-spin{
+          transform-origin:50px 50px;
+          animation:iconspin 18s linear infinite;
+        }
+        .icon-rain line{
+          animation:iconfall 0.9s linear infinite;
+        }
+        
+        @keyframes iconspin{
+          to{transform:rotate(360deg);}
+        }
+        @keyframes iconfall{
+          0% {opacity:0; transform:translateY(-6px);}
+          20% {opacity:1;}
+          100% {opacity:0; transform:translateY(16px);}
+        }
+        @media (prefers-reduced-motion:reduce){
+          .icon-spin, .icon-rain line{animation:none !important;}
+        }
 
       `}
       </style>
