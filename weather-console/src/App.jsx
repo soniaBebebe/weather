@@ -1,8 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import './App.css'
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
 
 async function fetchForecast(city){
-  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true`;
+  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&timezone=auto`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
@@ -16,8 +17,18 @@ async function fetchForecast(city){
 function buildFallback(city){
   const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt((0),0));
   const temp=12+(seed %15);
+  const hourlyTime=[];
+  const hourlyTemp=[];
+  const now=newDate();
+  for (let i=0; i<24; i++){
+    const t=new Date(now);
+    t.setHours(now.getHours()+i,0,0,0);
+    hourlyTime.push(t.tolSOString());
+    hourlyTemp.push(+(temp+Math.sin(i/4)*3).toFixed(1));
+  }
   return{
     current_weather:{temperature: temp, weathercode:1},
+    hourly:{time:hourlyTime, temperature_2m:hourlyTemp},
     _fallback:true,
   };
 }
@@ -58,6 +69,22 @@ const CONTINENTS = [
 //   if ([95,96,99].includes(code)) return "Гроза";
 //   return "Облачно";
 // }
+
+function HourlyChart({hourly}){
+  const rows=hourly.time.slice(0,24).map((t,i)=>({
+    hour:new Date(t).toLocaleTimeString("ru-RU", {hour:"2-digit"}),
+    temp:hourly.temperature_2m[i]
+  }));
+  return(
+    <ResponsiveContainer width="100%" height={140}>
+      <LineChart data={rows} margin={{top:4, right:8, left:-18, bottom:0}}>
+        <CartesianGrid stroke="var(--line)" vertical={false}/>
+        <XAxis dataKey="hour" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}} interval={3}/>
+        <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit={"C"} width={34}/>
+      </LineChart>
+    </ResponsiveContainer>
+  )
+}
 
 function iconTypeFromCode(code){
   if (code===0) return "Sunny";
