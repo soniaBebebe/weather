@@ -3,7 +3,7 @@ import './App.css'
 import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
 
 async function fetchForecast(city){
-  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&timezone=auto`;
+  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&daily=temperature_2m_max, temperature_2m_min` + `&timezone=auto`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
@@ -26,9 +26,22 @@ function buildFallback(city){
     hourlyTime.push(t.toISOString());
     hourlyTemp.push(+(temp+Math.sin(i/4)*3).toFixed(1));
   }
+  const dailyTime=[];
+  const dailyMax=[];
+  const dailyMin=[];
+
+  for(let i=0; i<7; i++){
+    const d=new Date(now);
+    d.setDate(now.getDate()+i);
+    dailyTime.push(d.tolISOString().slice(0,10));
+    dailyMax.push(+(temp+3+Math.sin(i/2)*2).toFixed(1));
+    dailyMin.push(+(temp-4+Mathsin(i/2)*2).toFixed(1));
+  }
+
   return{
     current_weather:{temperature: temp, weathercode:1},
     hourly:{time:hourlyTime, temperature_2m:hourlyTemp},
+    daily:{time:dailyTime, temperature_2m_max:dailyMax, temperature_2m_min: dailyMin},
     _fallback:true,
   };
 }
@@ -88,6 +101,7 @@ function HourlyChart({hourly}){
     </ResponsiveContainer>
   )
 }
+
 
 function iconTypeFromCode(code){
   if (code===0) return "Sunny";
@@ -157,6 +171,12 @@ function DetailPanel({city,data}){
       <HourlyChart hourly={data.hourly}/>
     </div>
   )
+}
+
+function WeeklyChart({daily}){
+  const rows=daily.time.map((d,i)=>({
+    //prodolzhit otsuda!!!
+  }))
 }
 
 function WorldMap({dataByCity, selectedId, onSelect}){
