@@ -37,6 +37,7 @@ const CITIES=[
   {id: 'sf', name:"San Francisco", region:"California, US", lat:37.7749, lon:-122.4194},
   {id: 'tyo', name:"Tokyo", region:"Kanto, JP", lat:35.6762, lon:139.6503},
   {id: 'lon', name:"London", region:"England, UK", lat:51.5074, lon:-0.1278},
+  {id: 'nyc', name:"New York", region:"New York, US", lat:40.7128, lon:-74.0060},
 ];
 
 const toXY =(lat,lon)=>({
