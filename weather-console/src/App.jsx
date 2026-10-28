@@ -15,15 +15,15 @@ async function fetchForecast(city){
 }
 
 function buildFallback(city){
-  const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt((0),0));
+  const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt(0),0);
   const temp=12+(seed %15);
   const hourlyTime=[];
   const hourlyTemp=[];
-  const now=newDate();
+  const now=new Date();
   for (let i=0; i<24; i++){
     const t=new Date(now);
     t.setHours(now.getHours()+i,0,0,0);
-    hourlyTime.push(t.tolSOString());
+    hourlyTime.push(t.toISOString());
     hourlyTemp.push(+(temp+Math.sin(i/4)*3).toFixed(1));
   }
   return{
@@ -90,14 +90,14 @@ function iconTypeFromCode(code){
   if (code===0) return "Sunny";
   if ([1,2,3].includes(code)) return "Cloudy";
   if ([45,48].includes(code)) return "Fog";
-  if ([51,53,55,61,63,65,80,81,82].includes(code)) return "Rain";
+  if ([51,53,55,61,63,65,80,81,82].includes(code)) return "rain";
   if ([71,73,75,77].includes(code)) return "Snow";
   if ([95,96,99].includes(code)) return "Storm";
   return "Cloudy";
 }
 
 function AnimatedIcon({type}){
-  if(type==="sun"){
+  if(type==="Sunny"){
     return(
       <svg width='64' height='64' viewBox='0 0 100 100'>
         <g className='icon-spin'>
@@ -105,6 +105,7 @@ function AnimatedIcon({type}){
             <rect key={i} x="48" y="6" width="4" height='14' rx='2' fill='var(--amber)' transform={`rotate(${i*45} 50 50)`}></rect>
           ))}
         </g>
+        <circle cx="50" cy="50" r="20" fill="var(--amber)"/>
       </svg>
     )
   }
