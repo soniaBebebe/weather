@@ -81,6 +81,8 @@ function HourlyChart({hourly}){
         <CartesianGrid stroke="var(--line)" vertical={false}/>
         <XAxis dataKey="hour" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}} interval={3}/>
         <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit={"C"} width={34}/>
+        <Tooltip contentStyle={{background:"var(-panel)", border:"1px solid var(--line)", fontFamily:"var(--font-mono)", fontSize:12}}/>
+        <Line type="monotone" dataKey="temp" stroke="var(--amber)" strokeWidth={2} dot={false}/>
       </LineChart>
     </ResponsiveContainer>
   )
@@ -151,6 +153,7 @@ function DetailPanel({city,data}){
       </p>
       <p className='condition'>{iconTypeFromCode(data.current_weather.weathercode)}</p>
       {data._fallback&& <p className='notice'>Демо-данные: реальный API недоступен</p>}
+      <HourlyChart hourly={data.hourly}/>
     </div>
   )
 }
