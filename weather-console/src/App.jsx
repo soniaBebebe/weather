@@ -182,7 +182,7 @@ function WorldMap({dataByCity, selectedId, onSelect}){
       <g key={city.id} transform={`translate(${x}, ${y})`}
       onClick={()=>onSelect(city.id)}
       style={{cursor:"pointer"}}>
-        <circle r={active ? 9:6.5} fill="var(--paper)" strokeWidth="1.5"/>
+        <circle r={active ? 9:6.5} fill="var(--amber)" stroke="var(--paper)" strokeWidth="1.5"/>
         <text y="-14" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="15" fill="var(--paper)">
           {city.name}
         </text>
