@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from 'react'
 import './App.css'
-import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer} from "recharts";
+import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar} from "recharts";
 
 async function fetchForecast(city){
-  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&daily=temperature_2m_max, temperature_2m_min` + `&timezone=auto`;
+  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&daily=temperature_2m_max,temperature_2m_min` + `&timezone=auto`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
@@ -33,7 +33,7 @@ function buildFallback(city){
   for(let i=0; i<7; i++){
     const d=new Date(now);
     d.setDate(now.getDate()+i);
-    dailyTime.push(d.tolISOString().slice(0,10));
+    dailyTime.push(d.toISOString().slice(0,10));
     dailyMax.push(+(temp+3+Math.sin(i/2)*2).toFixed(1));
     dailyMin.push(+(temp-4+Mathsin(i/2)*2).toFixed(1));
   }
@@ -91,7 +91,7 @@ function HourlyChart({hourly}){
   }));
   return(
     <ResponsiveContainer width="100%" height={140}>
-      <LineChart data={rows} margin={{top:4, right:8, left:-18, bottom:0}}>
+      <LineChart data={rows} margin={{top:4, right:8, left:0, bottom:0}}>
         <CartesianGrid stroke="var(--line)" vertical={false}/>
         <XAxis dataKey="hour" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}} interval={3}/>
         <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit={"C"} width={34}/>
@@ -169,14 +169,33 @@ function DetailPanel({city,data}){
       <p className='condition'>{iconTypeFromCode(data.current_weather.weathercode)}</p>
       {data._fallback&& <p className='notice'>Демо-данные: реальный API недоступен</p>}
       <HourlyChart hourly={data.hourly}/>
+      <WeeklyChart daily={data.daily}/>
     </div>
   )
 }
 
 function WeeklyChart({daily}){
   const rows=daily.time.map((d,i)=>({
-    //prodolzhit otsuda!!!
+    day: new Date(d).toLocaleDateString("ru-RU", {weekday:"short"}),
+    base: daily.temperature_2m_min[i],
+    range: daily.temperature_2m_max[i]-daily.temperature_2m_min[i],
+    min: daily.temperature_2m_min[i],
+    max: daily.temperature_2m_max[i],
   }))
+  return(
+    <ResponsiveContainer width="100%" height ={150}>
+      <BarChart data={rows} margin={{top:4,right:8, left:0, bottom:0}}>
+        <CartesianGrid stroke="var(--line)" vertical={false}/>
+        <XAxis dataKey="day" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}}/>
+        <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit=" C" width={34}/>
+        <Tooltip
+          contentStyle={{background:"var(--panel)", border:"1px solid var(--line)", fontFamily:"var(--font-mono)", fontSize:12}}
+          formatter={(value, name, props) => [`${props.payload.min}C - ${props.payload.max}C`, "диапазон"]}/>
+        <Bar dataKey="base" stackId="r" fill="transparent"/>
+        <Bar dataKey="range" stackId="r" fill="var(--amber)" radius={[3,3,3,3]}/>
+      </BarChart>
+    </ResponsiveContainer>
+  )
 }
 
 function WorldMap({dataByCity, selectedId, onSelect}){
