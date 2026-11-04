@@ -14,6 +14,50 @@ async function fetchForecast(city){
   
 }
 
+const ARCHIVE_DELAY_DAYS=5;
+
+function ftmDate(d){
+  return d.toISOString().slice(0,10); //"2026-10-28"
+}
+
+async function fetchHistorical(city){
+  const end=new Date();
+  end.setDate(end.getDate()-ARCHIVE_DELAY_DAYS);
+  const start=new Date();
+  start.setDate(start.getDate()- ARCHIVE_DELAY_DAYS-6);
+  const url = `https://archive-api.open-meteo.com/v1/archive` + 
+  `?latitude=${city.lat}&longitude=${city.lon}` + 
+  `&start_date=${fmtDate(start)}&end_date=${fmtDate(end)}` + 
+  `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum` + 
+  `&timezone=auto`;
+  try{
+    const res=await fetch(url);
+    if (!res.ok) throw new Error("bad response");
+    return await res.json();
+  } catch{
+    return buildHistoryFallback(city);
+  }
+} 
+
+function buildHistoryFallback(city){
+  const seed=city.id.split("").reduce((acc,ch)=> acc + ch.charCodeAt(0),0);
+  const base = 12+(seed % 15);
+  const time=[],max=[],min=[],precip=[];
+  for(let i=0; i<7; i++){
+    const d=new Date();
+    d.setDate(d.getDate()-ARCHIVE_DELAY_DAYS-6+i);
+    time.push(fmtDate(d));
+    max.push(+(base+3+Math.sin(i)*2).toFixed(1));
+    min.push(+(base-4+Math.sin(i)*2).toFixed(1));
+    precip.push(+(Math.max(0, Math.sin(i*1.7))*4).toFixed(1));
+  }
+  return{
+    daily:{time,temperature_2m_max:max, temperature_2m_min:min, precipitation_sum:precip},
+    _fallback:true,
+  };
+}
+//function HistoryChart
+
 function buildFallback(city){
   const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt(0),0);
   const temp=12+(seed %15);
@@ -35,7 +79,7 @@ function buildFallback(city){
     d.setDate(now.getDate()+i);
     dailyTime.push(d.toISOString().slice(0,10));
     dailyMax.push(+(temp+3+Math.sin(i/2)*2).toFixed(1));
-    dailyMin.push(+(temp-4+Mathsin(i/2)*2).toFixed(1));
+    dailyMin.push(+(temp-4+Math.sin(i/2)*2).toFixed(1));
   }
 
   return{
