@@ -3,7 +3,7 @@ import './App.css'
 import {LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar} from "recharts";
 
 async function fetchForecast(city){
-  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m` + `&daily=temperature_2m_max,temperature_2m_min` + `&timezone=auto`;
+  const url=`https://api.open-meteo.com/v1/forecast` + `?latitude=${city.lat}&longitude=${city.lon}` + `&current_weather=true` + `&hourly=temperature_2m,cloud_cover` + `&daily=temperature_2m_max,temperature_2m_min,precipitation_sum` + `&timezone=auto`;
   try{
     const res = await fetch(url);
     if(!res.ok) throw new Error("Ошибка запроса: "+res.status);
@@ -63,16 +63,19 @@ function buildFallback(city){
   const temp=12+(seed %15);
   const hourlyTime=[];
   const hourlyTemp=[];
+  const hourlyCloud=[];
   const now=new Date();
   for (let i=0; i<24; i++){
     const t=new Date(now);
     t.setHours(now.getHours()+i,0,0,0);
     hourlyTime.push(t.toISOString());
     hourlyTemp.push(+(temp+Math.sin(i/4)*3).toFixed(1));
+    hourlyCloud.push(Math.round(50+Math.sin(i/3+seed)*30));
   }
   const dailyTime=[];
   const dailyMax=[];
   const dailyMin=[];
+  const dailyPrecip=[];
 
   for(let i=0; i<7; i++){
     const d=new Date(now);
@@ -80,12 +83,13 @@ function buildFallback(city){
     dailyTime.push(d.toISOString().slice(0,10));
     dailyMax.push(+(temp+3+Math.sin(i/2)*2).toFixed(1));
     dailyMin.push(+(temp-4+Math.sin(i/2)*2).toFixed(1));
+    dailyPrecip.push(+(Math.max(0,Math.sin(i*1.3+seed))*5).toFixed(1));
   }
 
   return{
     current_weather:{temperature: temp, weathercode:1},
-    hourly:{time:hourlyTime, temperature_2m:hourlyTemp},
-    daily:{time:dailyTime, temperature_2m_max:dailyMax, temperature_2m_min: dailyMin},
+    hourly:{time:hourlyTime, temperature_2m:hourlyTemp, cloud_cover:hourlyCloud},
+    daily:{time:dailyTime, temperature_2m_max:dailyMax, temperature_2m_min: dailyMin, precipitation_sum:dailyPrecip},
     _fallback:true,
   };
 }
@@ -242,7 +246,49 @@ function WeeklyChart({daily}){
   )
 }
 
-function WorldMap({dataByCity, selectedId, onSelect}){
+const LAYERS=[
+  {id:"temperature", label:"Tемпература"},
+  {id:"precip", label:"Осадки"},
+  {id:"clouds", label:"Облачность"},
+];
+
+function currentHourIndex(data){
+  const now=data.current_weather.time;
+  if (!now) return 0;
+  const i=data.hourly.time.findIndex((t)=>t.startsWith(now.slice(0,13)));
+  return i===-1?0:i;
+}
+
+function layerValue(layer,data){
+    if(!data) return null;
+    if(layer==="temperature") return data.current_weather.temperature;
+    if(layer==="precip") return data.daily.precipitation_sum[0];
+    return data.hourly.cloud_cover[currentHourIndex(data)];
+  }
+
+function layerLabel(layer,v){
+  if (v==null) return "...";
+  if(layer==="temperature") return `${Math.round(v)}C`;
+  if(layer==="precip") return `${v}mm`;
+  return `${Math.round(v)}%`;
+}
+
+function tempColor(t){
+  const p=Math.min(1, Math.max(0,(t-2)/26));
+  const cold=[79,169,201];
+  const hot=[217,104,74];
+  const mix=(i)=>Math.round(cold[i] + (hot[i] - cold[i]) * p);
+  return `rgb(${mix(0)}, ${mix(1)}, ${mix(2)})`;
+}
+
+function markerLook(layer,v){
+  if(v==null) return {fill:"var(--muted)", opacity:1, halo:0};
+  if(layer==="temperature") return {fill:tempColor(v), opacity:1, halo:0};
+  if (layer==="precip") return {fill:"var(--cyan)", opacity:1, halo:Math.min(v*3, 24)};
+  return {fill:"var(--paper)", opacity:0.25+0.75 * (v/100), halo:0};
+}
+
+function WorldMap({dataByCity, selectedId, onSelect, layer}){
   return(
     <svg viewBox="0 0 1000 500" className='world-map' role="img" aria-label="World Map">
       <rect width="1000" height="500" fill="var(--panel)"/>
@@ -264,13 +310,16 @@ function WorldMap({dataByCity, selectedId, onSelect}){
         const{x,y}=toXY(city.lat, city.lon);
         const data=dataByCity[city.id];
         const active=selectedId===city.id;
+        const value=layerValue(layer,data);
+        const look = markerLook(layer,value);
         return(
 
         
       <g key={city.id} transform={`translate(${x}, ${y})`}
       onClick={()=>onSelect(city.id)}
       style={{cursor:"pointer"}}>
-        <circle r={active ? 9:6.5} fill="var(--amber)" stroke="var(--paper)" strokeWidth="1.5"/>
+        {look.halo>0 && <circle r={10+look.halo} fill="var(--cyan)" opacity="0.2" pointerEvents="none"/>}
+        <circle r={active ? 9:6.5} fill={look.fill} opacity={look.opacity} stroke="var(--paper)" strokeWidth="1.5"/>
         <text y="-14" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="15" fill="var(--paper)">
           {city.name}
         </text>
