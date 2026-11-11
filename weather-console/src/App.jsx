@@ -326,8 +326,8 @@ function WorldMap({dataByCity, selectedId, onSelect, layer}){
         {/* <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
           {data ? `${Math.round(data.current_weather.temperature)}C`: "..."}
         </text> */}
-        <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)">
-          {data ? `${Math.round(data.current_weather.temperature)}C${data._fallback ? " *":""}`:"..."}
+        <text y="24" textAnchor="middle" fontFamily="var(--font-mono)" fontSize="14" fill="var(--muted)"> 
+          {layerLabel(layer, value)}{data && data._fallback ? " *" : ""} 
         </text>
       </g>
       );
@@ -341,6 +341,7 @@ export default function App() {
   const coords=useMemo(()=>CITIES.map((c)=>({...c,...toXY(c.lat, c.lon) })), []);
   const [dataByCity, setDataByCity] = useState({});
   const [selectedId, setSelectedId] = useState(null);
+  const [layer,setLayer]=useState("temperature");
   useEffect(()=>{
     Promise.all(CITIES.map((c)=>fetchForecast(c))).then((results)=>{
       const map={};
@@ -411,7 +412,15 @@ export default function App() {
       </style>
       <h1> Шаг 2: Живые данные с Open-Meteo</h1>
       <p> три параллельных запроса -- текущая температура на карте</p>
-      
+
+      <div>
+        {LAYERS.map((l)=>(
+          <button key={l.id} className={`layer-btn ${layer===l.id ? "active":""}`} onClick={()=>setLayer(l.id)}>
+            {l.label}
+          </button>
+        ))}
+      </div>
+
       <div className="map-wrap">
         <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
