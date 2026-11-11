@@ -396,6 +396,32 @@ export default function App() {
           animation:iconfall 0.9s linear infinite;
         }
         
+        .layers{
+        display:flex;
+        gap:6px;
+        margin-bottom:10px;
+        }
+
+        .layer-btn{
+        background:var(--panel);
+        border:1px solid var(--line);
+        color:var(--muted);
+        font-family:var(--font-mono);
+        font-size:12px;
+        padding:6px 12px;
+        border-radius:5px;
+        cursor:pointer;
+        }
+        
+        .layer-btn:hover{
+        color:var(--paper);
+        }
+
+        .layer-btn.active{
+        border-color:var(--amber);
+        color:var(--amber);
+        }
+        
         @keyframes iconspin{
           to{transform:rotate(360deg);}
         }
