@@ -16,7 +16,7 @@ async function fetchForecast(city){
 
 const ARCHIVE_DELAY_DAYS=5;
 
-function ftmDate(d){
+function fmtDate(d){
   return d.toISOString().slice(0,10); //"2026-10-28"
 }
 
@@ -182,7 +182,7 @@ function HourlyChart({hourly}){
         <CartesianGrid stroke="var(--line)" vertical={false}/>
         <XAxis dataKey="hour" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}} interval={3}/>
         <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit={"C"} width={34}/>
-        <Tooltip contentStyle={{background:"var(-panel)", border:"1px solid var(--line)", fontFamily:"var(--font-mono)", fontSize:12}}/>
+        <Tooltip contentStyle={{background:"var(--panel)", border:"1px solid var(--line)", fontFamily:"var(--font-mono)", fontSize:12}}/>
         <Line type="monotone" dataKey="temp" stroke="var(--amber)" strokeWidth={2} dot={false}/>
       </LineChart>
     </ResponsiveContainer>
@@ -258,7 +258,7 @@ function DetailPanel({city,data,history}){
       <HourlyChart hourly={data.hourly}/>
       <WeeklyChart daily={data.daily}/>
       <p className='hint'>История: 7 дней (с задержкой архива)</p>
-      {history ? <HistoryChart historu={history}/> : <p className='hint'>Загружаем историю...</p>}
+      {history ? <HistoryChart history={history}/> : <p className='hint'>Загружаем историю...</p>}
     </div>
   )
 }
@@ -344,7 +344,7 @@ function WorldMap({dataByCity, selectedId, onSelect, layer}){
       <line x1="0" y1="250" x2="1000" y2="250" stroke="var(--line)" strokeWidth="1.5" opacity="0.55" />
 
       {CONTINENTS.map((d,i)=>(
-        <path key={i} d={d} fill="var(--land)" stroke="var(--lnd-line)" strokeWidth="1.5" />
+        <path key={i} d={d} fill="var(--land)" stroke="var(--land-line)" strokeWidth="1.5" />
       ))}
 
       {CITIES.map((city)=>{
@@ -417,7 +417,7 @@ export default function App() {
 
           --land:#1C2C4A; --land-line:#33487A;
 
-          --paper:#EAEEF1; --muted:#7C8AA6; --amber:#E8A23A;
+          --paper:#EAEEF1; --muted:#7C8AA6; --amber:#E8A23A; --cyan:#4fa9c9;
 
           --font-display:'Space Grotesk',sans-serif; --font-mono:'IBM Plex Mono',monospace;
 
@@ -475,7 +475,7 @@ export default function App() {
         
         .hint{
         margin-top:10px;
-        font-family:(var--font-mono);
+        font-family:var(--font-mono);
         font-size:13px;
         color:var(--muted);
         }
@@ -532,7 +532,7 @@ export default function App() {
       </div>
 
       <div className="map-wrap">
-        <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} />
+        <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} layer={layer} />
       </div>
       <DetailPanel city={selectedCity} data={selectedId ? dataByCity[selectedId]:null} history={selectedId ? historyByCity[selectedId]:null} />
       <p className='mono' style={{marginTop:10}}>
