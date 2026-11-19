@@ -56,7 +56,46 @@ function buildHistoryFallback(city){
     _fallback:true,
   };
 }
-//function HistoryChart
+function HistoryChart ({history}){
+  const d=history.daily;
+  const rows=d.time
+  .map((t,i)=>({
+    day: new Date(t+"T12:00:00").toLocaleDateString("ru-RU", {weekday:"short"}),
+    max:d.temperature_2m_max[i],
+    min:d.temperature_2m_min[i],
+    precip:d.precipitation_sum[i],
+  })).filter((r)=> r.max !=null && r.min !=null);
+  const tip={
+    background:"var(--panel)",
+    border:"1px solid var(--line)",
+    fontFamily: "var(--font-mono)",
+    fontSize:12
+  };
+  return(
+    <>
+      <ResponsiveContainer width="100%" height={130}>
+        <LineChart data={rows} margin={{top:4, right:8, left:0, bottom:0}}>
+          <CartesianGrid stroke='var(--line)' vertical={false}></CartesianGrid>
+          <XAxis dataKey="day" stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={{stroke:"var(--line)"}}/>
+          <YAxis stroke="var(--muted)" fontSize={11} tickLine={false} axisLine={false} unit="C" width={40}/>
+          <Tooltip contentStyle={tip}/>
+          <Line type="monotone" dataKey="max" name="макс" stroke="var(--amber)" strokeWidth={2} dot={false}/>
+          <Line type="monotone" dataKey="min" name="мин" stroke="var(--cyan)" strokeWidth={2} dot={false}/>
+        </LineChart>  
+      </ResponsiveContainer>
+      <ResponsiveContainer width="100%" height={90}>
+        <BarChart data={rows} margin={{top:4, right:8, left:0, bottom:0}}>
+          <XAxis dataKey="day" stroke="var(--muted)" fontSize={10} tickLine={false} axisLine={{stroke:"var(--line)"}}/>
+          <YAxis stroke="var(--muted)" fontSize={10} tickLine={false} axisLine={false} unit="mm" width={40}/>
+          <Tooltip contentStyle={tip}/>
+          <Bar dataKey="precip" name="осадки" fill="var(--cyan)" radius={[3,3,0,0]}/>
+        </BarChart>
+      </ResponsiveContainer>
+      </>
+  )
+}
+
+
 
 function buildFallback(city){
   const seed=city.id.split("").reduce((acc, ch)=> acc+ch.charCodeAt(0),0);
@@ -152,17 +191,17 @@ function HourlyChart({hourly}){
 
 
 function iconTypeFromCode(code){
-  if (code===0) return "Sunny";
-  if ([1,2,3].includes(code)) return "Cloudy";
-  if ([45,48].includes(code)) return "Fog";
+  if (code===0) return "sunny";
+  if ([1,2,3].includes(code)) return "cloudy";
+  if ([45,48].includes(code)) return "fog";
   if ([51,53,55,61,63,65,80,81,82].includes(code)) return "rain";
-  if ([71,73,75,77].includes(code)) return "Snow";
-  if ([95,96,99].includes(code)) return "Storm";
-  return "Cloudy";
+  if ([71,73,75,77].includes(code)) return "snow";
+  if ([95,96,99].includes(code)) return "storm";
+  return "cloudy";
 }
 
 function AnimatedIcon({type}){
-  if(type==="Sunny"){
+  if(type==="sunny"){
     return(
       <svg width='64' height='64' viewBox='0 0 100 100'>
         <g className='icon-spin'>
@@ -196,7 +235,7 @@ function AnimatedIcon({type}){
 }
 
 
-function DetailPanel({city,data}){
+function DetailPanel({city,data,history}){
   if(!city){
     return <p className='hint'>Кликните по городу на карте, чтобы узнать прогноз</p>;
   }
@@ -218,6 +257,8 @@ function DetailPanel({city,data}){
       {data._fallback&& <p className='notice'>Демо-данные: реальный API недоступен</p>}
       <HourlyChart hourly={data.hourly}/>
       <WeeklyChart daily={data.daily}/>
+      <p className='hint'>История: 7 дней (с задержкой архива)</p>
+      {history ? <HistoryChart historu={history}/> : <p className='hint'>Загружаем историю...</p>}
     </div>
   )
 }
@@ -342,6 +383,16 @@ export default function App() {
   const [dataByCity, setDataByCity] = useState({});
   const [selectedId, setSelectedId] = useState(null);
   const [layer,setLayer]=useState("temperature");
+  const [historyByCity, setHistoryByCity]=useState({});
+
+  useEffect(()=>{
+    if(!selectedId || historyByCity[selectedId]) return;
+    const city=CITIES.find((c)=> c.id===selectedId);
+    fetchHistorical(city).then((h)=>
+      setHistoryByCity((prev)=>({...prev, [selectedId]:h }))
+    );
+  }, [selectedId]);
+
   useEffect(()=>{
     Promise.all(CITIES.map((c)=>fetchForecast(c))).then((results)=>{
       const map={};
@@ -422,6 +473,39 @@ export default function App() {
         color:var(--amber);
         }
         
+        .hint{
+        margin-top:10px;
+        font-family:(var--font-mono);
+        font-size:13px;
+        color:var(--muted);
+        }
+
+        .panel{
+        margin-top:14px;
+        border:1px solid var(--line);
+        border-radius:6px;
+        padding:16px 18px;
+        }
+
+        .panel-head{
+        display:flex;
+        justify-content:space-between;
+        align-items:center;
+        gap:10px;
+        }
+
+        .panel-head h2{
+        margin:0;
+        font-size:18px;
+        flex:1;
+        }
+
+        .panel-head .temp{
+        font-family:var(--font-mono);
+        font-size:28px;
+        color:var(--amber);
+        }
+
         @keyframes iconspin{
           to{transform:rotate(360deg);}
         }
@@ -450,7 +534,7 @@ export default function App() {
       <div className="map-wrap">
         <WorldMap dataByCity={dataByCity} selectedId={selectedId} onSelect={setSelectedId} />
       </div>
-      <DetailPanel city={selectedCity} data={selectedId ? dataByCity[selectedId]:null} />
+      <DetailPanel city={selectedCity} data={selectedId ? dataByCity[selectedId]:null} history={selectedId ? historyByCity[selectedId]:null} />
       <p className='mono' style={{marginTop:10}}>
         {selectedId ? `Выбран: ${CITIES.find((c)=>c.id===selectedId).name}` : "Кликните по городу на карте"}
       </p>
